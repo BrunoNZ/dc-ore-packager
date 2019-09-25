@@ -20,7 +20,9 @@ class DCOREPackager:
             'oai_dc':'http://www.openarchives.org/OAI/2.0/oai_dc/',
             'atom':'http://www.w3.org/2005/Atom',
             'oai_id':'http://www.openarchives.org/OAI/2.0/oai-identifier',
-            'qdc':'http://dspace.org/qualifieddc/'}
+            'qdc':'http://dspace.org/qualifieddc/',
+            'xoai':'http://www.lyncode.com/xoai',
+            'dcterms':'http://purl.org/dc/terms/'}
         
         self.repositoryIdentifier = self.getOAIidentifier()
         self.identifier = 'oai'+':'+self.repositoryIdentifier+':'+self.handle
@@ -91,7 +93,6 @@ class DCOREPackager:
     
     def getPackage(self):
         with self.openTmpDir() as tmpDir:
-            print(tmpDir)
             pkg = ZipFile(tmpDir+'.zip', 'w')
             pkg.write(self.writeContentsFile(tmpDir))
             pkg.write(self.writeORExml(tmpDir))
@@ -101,10 +102,7 @@ class DCOREPackager:
 
 if __name__ == "__main__":
     baseURL = 'http://demo.dspace.org'
-    handle = '10673/37'
-
-    # baseURL = 'https://acervodigital.ufpr.br/'
-    # handle = '/1884/36470'
+    handle = '10673/7'
 
     pack = DCOREPackager(baseURL, handle)
-    print(pack.getPackage())
+    pack.getPackage()
