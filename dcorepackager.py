@@ -1,8 +1,10 @@
 import requests
 import xml.etree.ElementTree as ElementTree
-import tempfile
+import uuid
 from pathlib import Path
 from zipfile import ZipFile
+
+import sys
 
 NAMESPACES = {
         'oai':'http://www.openarchives.org/OAI/2.0/',
@@ -28,8 +30,8 @@ class DCOREPackager:
         self.repositoryIdentifier = self.getOAIidentifier()
         self.identifier = 'oai'+':'+self.repositoryIdentifier+':'+self.handle
 
-    def openTmpDir(self):
-        return tempfile.TemporaryDirectory(dir=self.baseOutDir)
+    def getTempFile(self):
+        return Path(self.baseOutDir+'/'+str(uuid.uuid4()))
 
     def getOAIidentifier(self):
         options = {
@@ -43,19 +45,16 @@ class DCOREPackager:
                 .find('oai_id:repositoryIdentifier', namespaces=NAMESPACES)
         return xml.text
 
-    def writeContentsFile(self, outDir):
-        outFile = open(Path(outDir)/'contents', 'w')
-        outFileName = outFile.name
-        outFile.write('ORE.xml\tbundle:ORE')
-        outFile.close()
-        return outFileName
+    def writeContentsFile(self, outFile):
+        outFile.write(b'ORE.xml\tbundle:ORE')
+        pass
 
     def convertDimToDc(self, dim):
         dc_root = ElementTree.Element('dublin_core')
         dc_root.set('schema','dc')
         
         for e in dim.iter('*'):
-            dc_e = ElementTree.Element('dcvalue')
+            dc_e = ElementTree.SubElement(dc_root,'dcvalue')
             
             e_mdschema = e.get('mdschema')
             e_element = e.get('element')
@@ -65,24 +64,22 @@ class DCOREPackager:
             if (e_mdschema != 'dc'):
                 continue
 
-            if (e_element != 'none'):
+            if (e_element is not None):
                 dc_e.set('element', e_element)
             else:
                 raise Exception('e_element is none')
 
-            if (e_qualifier != 'none'):
+            if (e_qualifier is not None):
                 dc_e.set('qualifier', e_qualifier)
 
-            if (e_lang != 'none'):
+            if (e_lang is not None):
                 dc_e.set('language', e_lang)
 
             dc_e.text = e.text
 
-            dc_root.append(dc_e)
-
         return ElementTree.ElementTree(dc_root)
 
-    def writeDCxml(self, outDir):
+    def writeDCxml(self, outFile):
         options = {
             'verb': 'GetRecord',
             'metadataPrefix': 'dim',
@@ -96,14 +93,11 @@ class DCOREPackager:
                     .find('oai:metadata', namespaces=NAMESPACES)
                     .find('dim:dim', namespaces=NAMESPACES)\
                 )
-        outFile = outFile = open(Path(outDir)/'dublin_core.xml', 'wb')
-        outFileName = outFile.name
         dim_xml = self.convertDimToDc(xml)
-        dim_xml.write(outFile)
-        outFile.close()
-        return outFileName
+        dim_xml.write(outFile, xml_declaration=True, encoding='utf-8')
+        pass
 
-    def writeORExml(self, outDir):
+    def writeORExml(self, outFile):
         options = {
             'verb': 'GetRecord',
             'metadataPrefix': 'ore',
@@ -117,25 +111,27 @@ class DCOREPackager:
                     .find('oai:metadata', namespaces=NAMESPACES)\
                     .find('atom:entry', namespaces=NAMESPACES)\
                 )
-        outFile = outFile = open(Path(outDir)/'ORE.xml', 'wb')
-        outFileName = outFile.name
-        xml.write(outFile)
-        outFile.close()
-        return outFileName
-    
+        xml.write(outFile, xml_declaration=True, encoding='utf-8')
+        pass
+
     def getPackage(self):
-        self.writeDCxml(self.baseOutDir)
-        # with self.openTmpDir() as tmpDir:
-        #     pkg = ZipFile(tmpDir+'.zip', 'w')
-        #     pkg.write(self.writeContentsFile(tmpDir))
-        #     pkg.write(self.writeORExml(tmpDir))
-        #     pkg.write(self.writeDCxml(tmpDir))
-        #     pkg.close()
-        #     return pkg
+        outZip = self.getTempFile()+'.zip'
+        with ZipFile(outZip, 'w') as myzip:
+            with myzip.open('dublin_core.xml', 'w') as outFile:
+                self.writeDCxml(outFile)
+            
+            with myzip.open('ORE.xml', 'w') as outFile:
+                self.writeORExml(outFile)
+
+            with myzip.open('contents', 'w') as outFile:
+                self.writeContentsFile(outFile)
+        
+        return outZip
 
 if __name__ == "__main__":
     baseURL = 'http://demo.dspace.org'
     handle = '10673/7'
 
     pack = DCOREPackager(baseURL, handle)
-    pack.getPackage()
+    f = pack.getPackage()
+    print(f)
