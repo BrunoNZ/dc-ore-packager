@@ -14,7 +14,8 @@ NAMESPACES = {
         'qdc':'http://dspace.org/qualifieddc/',
         'xoai':'http://www.lyncode.com/xoai',
         'dcterms':'http://purl.org/dc/terms/',
-        'dim':'http://www.dspace.org/xmlns/dspace/dim'}
+        'dim':'http://www.dspace.org/xmlns/dspace/dim',
+        'oreatom':'http://www.openarchives.org/ore/atom/'}
 
 class DCOREPackager:
 
@@ -29,6 +30,10 @@ class DCOREPackager:
         
         self.repositoryIdentifier = self.getOAIidentifier()
         self.identifier = 'oai'+':'+self.repositoryIdentifier+':'+self.handle
+
+        # Register Namespaces in ElementTree
+        for prefix, uri in NAMESPACES.items():
+            ElementTree.register_namespace(prefix, uri)
 
     def getTempFile(self):
         return Path(self.baseOutDir+'/'+str(uuid.uuid4()))
@@ -111,11 +116,11 @@ class DCOREPackager:
                     .find('oai:metadata', namespaces=NAMESPACES)\
                     .find('atom:entry', namespaces=NAMESPACES)\
                 )
-        xml.write(outFile, xml_declaration=True, encoding='utf-8')
+        xml.write(outFile, encoding='utf-8')
         pass
 
     def getPackage(self):
-        outZip = self.getTempFile()+'.zip'
+        outZip = self.getTempFile()
         with ZipFile(outZip, 'w') as myzip:
             with myzip.open('dublin_core.xml', 'w') as outFile:
                 self.writeDCxml(outFile)
