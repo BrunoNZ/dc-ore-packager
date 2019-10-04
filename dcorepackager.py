@@ -2,7 +2,6 @@ import requests
 import xml.etree.ElementTree as ElementTree
 import uuid
 import os
-import sys
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -32,6 +31,9 @@ class DCOREPackager:
         # Register Namespaces in ElementTree
         for prefix, uri in NAMESPACES.items():
             ElementTree.register_namespace(prefix, uri)
+
+        # Item Number. Used to create directories into ZipFile
+        self.nItem = 1
 
         # Define outDir for getTempFile method
         self.outDir = outDir
@@ -132,14 +134,16 @@ class DCOREPackager:
         pass
 
     def getPackage(self):
+        dID = str(self.nItem)
+        self.nItem += 1
         with ZipFile(self.outFile, 'w') as outZip:
-            with outZip.open('dublin_core.xml', 'w') as outFile:
+            with outZip.open(dID + '/dublin_core.xml', 'w') as outFile:
                 self.writeDCxml(outFile)
             
-            with outZip.open('ORE.xml', 'w') as outFile:
+            with outZip.open(dID + '/ORE.xml', 'w') as outFile:
                 self.writeORExml(outFile)
 
-            with outZip.open('contents', 'w') as outFile:
+            with outZip.open(dID + '/contents', 'w') as outFile:
                 self.writeContentsFile(outFile)
         
         return self.outFile
