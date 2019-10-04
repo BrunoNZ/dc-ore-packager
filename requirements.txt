@@ -1,7 +1,6 @@
 Flask
 gunicorn
 requests
-xml
 uuid
 os
 pathlib
