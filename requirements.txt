@@ -1,2 +1,8 @@
 Flask
 gunicorn
+requests
+xml.etree.ElementTree
+uuid
+os
+pathlib
+zipfile
