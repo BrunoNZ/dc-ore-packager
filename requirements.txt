@@ -3,4 +3,3 @@ gunicorn
 requests
 uuid
 pathlib
-zipfile
