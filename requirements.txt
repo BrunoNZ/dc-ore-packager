@@ -1,7 +1,7 @@
 Flask
 gunicorn
 requests
-xml.etree.ElementTree
+xml
 uuid
 os
 pathlib
