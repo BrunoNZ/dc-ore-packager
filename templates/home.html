@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>HTML Forms</h2>
+
+<form action="{{ url_for('get_package') }}">
+  Base URL:<br>
+  <input type="text" name="baseurl" value="http://demo.dspace.org/">
+  <br>
+  Handle:<br>
+  <input type="text" name="handle" value="10673/7">
+  <br><br>
+  <input type="submit" value="Submit">
+</form> 
+
+<p>If you click the "Submit" button, the form-data will be sent to a page called "/action_page.php".</p>
+
+</body>
+</html>

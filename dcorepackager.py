@@ -1,10 +1,10 @@
 import requests
 import xml.etree.ElementTree as ElementTree
 import uuid
+import os
+import sys
 from pathlib import Path
 from zipfile import ZipFile
-
-import sys
 
 NAMESPACES = {
         'oai':'http://www.openarchives.org/OAI/2.0/',
@@ -18,12 +18,10 @@ NAMESPACES = {
         'oreatom':'http://www.openarchives.org/ore/atom/'}
 
 class DCOREPackager:
-
-    def __init__(self, baseURL, handle):
+    
+    def __init__(self, baseURL, handle, outDir=None, outFile=None):
         self.baseURL = baseURL.rstrip('/')
         self.handle = handle.lstrip('/').rstrip('/')
-
-        self.baseOutDir = '/tmp/dcorepackager'
 
         self.oaiURL = self.baseURL+'/oai/request'
         self.headers = {'content-type': 'application/xml'}
@@ -35,8 +33,22 @@ class DCOREPackager:
         for prefix, uri in NAMESPACES.items():
             ElementTree.register_namespace(prefix, uri)
 
+        # Define outDir for getTempFile method
+        self.outDir = outDir
+        if (self.outDir is None):
+            self.outDir = './tmp'
+
+        # Define outZip for getPackage method
+        self.outFile = outFile
+        if (self.outFile is None):
+            self.outFile = self.getTempFile()
+
+    def __del__(self):
+        if os.path.exists(self.outFile):
+            os.remove(self.outFile)
+
     def getTempFile(self):
-        return Path(self.baseOutDir+'/'+str(uuid.uuid4()))
+        return Path(self.outDir+'/'+str(uuid.uuid4())+'.zip')
 
     def getOAIidentifier(self):
         options = {
@@ -120,18 +132,17 @@ class DCOREPackager:
         pass
 
     def getPackage(self):
-        outZip = self.getTempFile()
-        with ZipFile(outZip, 'w') as myzip:
-            with myzip.open('dublin_core.xml', 'w') as outFile:
+        with ZipFile(self.outFile, 'w') as outZip:
+            with outZip.open('dublin_core.xml', 'w') as outFile:
                 self.writeDCxml(outFile)
             
-            with myzip.open('ORE.xml', 'w') as outFile:
+            with outZip.open('ORE.xml', 'w') as outFile:
                 self.writeORExml(outFile)
 
-            with myzip.open('contents', 'w') as outFile:
+            with outZip.open('contents', 'w') as outFile:
                 self.writeContentsFile(outFile)
         
-        return outZip
+        return self.outFile
 
 if __name__ == "__main__":
     baseURL = 'http://demo.dspace.org'
