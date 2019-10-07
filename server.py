@@ -1,8 +1,14 @@
 from flask import Flask, render_template, request, send_file
 from dcorepackager import DCOREPackager
-from pathlib import Path
+from urllib.parse import urlparse
 
 app = Flask(__name__)
+
+def parseURL(fullURL):
+    o = urlparse(fullURL)
+    baseURL = "://".join([o.scheme,o.netloc])
+    handle = o.path.rsplit("/handle/").pop()
+    return {"base":baseURL, "handle":handle}
 
 @app.route("/")
 def homepage():
@@ -10,9 +16,9 @@ def homepage():
 
 @app.route("/get")
 def get_package():
-    baseURL = request.args.get("baseurl")
-    handle = request.args.get("handle")
-    pkg = DCOREPackager(baseURL, handle)
+    fullURL = request.args.get("fullurl")
+    url = parseURL(fullURL)
+    pkg = DCOREPackager(url['base'], url['handle'])
     return send_file(   
         pkg.getPackage(),
         as_attachment=True,
