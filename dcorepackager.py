@@ -4,6 +4,7 @@ import uuid
 import os
 from pathlib import Path
 from zipfile import ZipFile
+from identifier_exceptions import exceptions as identifier_exceptions
 
 NAMESPACES = {
         'oai':'http://www.openarchives.org/OAI/2.0/',
@@ -52,7 +53,16 @@ class DCOREPackager:
     def getTempFile(self):
         return Path(self.outDir+'/'+str(uuid.uuid4())+'.zip')
 
+    def getOAIidentifierException(self):
+        return identifier_exceptions.get(self.baseURL)
+
     def getOAIidentifier(self):
+        
+        # Verify if there is an exception for self.baseURL
+        idException = self.getOAIidentifierException()
+        if idException is not None:
+            return idException
+
         options = {
             'verb': 'Identify'
         }
