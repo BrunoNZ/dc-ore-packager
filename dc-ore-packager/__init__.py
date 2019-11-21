@@ -4,7 +4,6 @@ import uuid
 import os
 from pathlib import Path
 from zipfile import ZipFile
-from identifier_exceptions import exceptions as identifier_exceptions
 
 NAMESPACES = {
         'oai':'http://www.openarchives.org/OAI/2.0/',
@@ -18,14 +17,19 @@ NAMESPACES = {
         'oreatom':'http://www.openarchives.org/ore/atom/'}
 
 class DCOREPackager:
-    
-    def __init__(self, baseURL, handle, outDir=None, outFile=None):
+
+    def __init__(
+        self, baseURL, handle,
+        idExceptions={}, outDir=None, outFile=None):
+
         self.baseURL = baseURL.rstrip('/')
         self.handle = handle.lstrip('/').rstrip('/')
 
+        self.idExceptions = idExceptions
+
         self.oaiURL = self.baseURL+'/oai/request'
         self.headers = {'content-type': 'application/xml'}
-        
+
         self.repositoryIdentifier = self.getOAIidentifier()
         self.identifier = 'oai'+':'+self.repositoryIdentifier+':'+self.handle
 
@@ -54,10 +58,10 @@ class DCOREPackager:
         return Path(self.outDir+'/'+str(uuid.uuid4())+'.zip')
 
     def getOAIidentifierException(self):
-        return identifier_exceptions.get(self.baseURL)
+        return self.idExceptions.get(self.baseURL)
 
     def getOAIidentifier(self):
-        
+
         # Verify if there is an exception for self.baseURL
         idException = self.getOAIidentifierException()
         if idException is not None:
@@ -81,15 +85,15 @@ class DCOREPackager:
     def convertDimToDc(self, dim):
         dc_root = ElementTree.Element('dublin_core')
         dc_root.set('schema','dc')
-        
+
         for e in dim.iter('*'):
             dc_e = ElementTree.SubElement(dc_root,'dcvalue')
-            
+
             e_mdschema = e.get('mdschema')
             e_element = e.get('element')
             e_qualifier = e.get('qualifier')
             e_lang = e.get('lang')
-            
+
             if (e_mdschema != 'dc'):
                 continue
 
@@ -149,13 +153,13 @@ class DCOREPackager:
         with ZipFile(self.outFile, 'w') as outZip:
             with outZip.open(dID + '/dublin_core.xml', 'w') as outFile:
                 self.writeDCxml(outFile)
-            
+
             with outZip.open(dID + '/ORE.xml', 'w') as outFile:
                 self.writeORExml(outFile)
 
             with outZip.open(dID + '/contents', 'w') as outFile:
                 self.writeContentsFile(outFile)
-        
+
         return self.outFile
 
 if __name__ == "__main__":

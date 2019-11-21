@@ -21,8 +21,3 @@ Prerequisites (Python):
   <li>uuid</li>
   <li>pathlib</li>
 </ul>
-
-In the file `server.py` there is a sample of how to use it as a web service. To run it:
-```bash
-$ python3 server.py
-```
