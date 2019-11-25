@@ -6,18 +6,7 @@ The objective is to create a clone of the given item using a link to its bitstre
 
 The main class is implemented in `dcorepackager.py` and it is named "DCOREPackager". To use it:
 ```python
-from dcorepackager import DCOREPackager
-
-baseURL = 'http://demo.dspace.org'
-handle = '10673/7'
-
-i = DCOREPackager(baseURL, handle)
+from dc_ore_packager import DCOREPackager
+i = DCOREPackager('http://demo.dspace.org', '10673/7')
 pkg = i.getPackage()
 ```
-
-Prerequisites (Python):
-<ul>
-  <li>requests</li>
-  <li>uuid</li>
-  <li>pathlib</li>
-</ul>
