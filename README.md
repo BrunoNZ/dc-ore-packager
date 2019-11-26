@@ -10,3 +10,5 @@ from dc_ore_packager import DCOREPackager
 i = DCOREPackager('http://demo.dspace.org', '10673/7')
 pkg = i.getPackage()
 ```
+
+A sample WebApp that receives a URL and send a package file: [dc-ore-packager-webapp](https://github.com/BrunoNZ/dc-ore-packager-webapp)
