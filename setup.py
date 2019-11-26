@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="dc-ore-packager-BrunoNZ",
+    name="dc-ore-packager",
     version="0.0.1",
     author="Bruno Nocera Zanette",
     author_email="brunonzanette@gmail.com",
