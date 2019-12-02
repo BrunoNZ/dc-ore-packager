@@ -20,15 +20,19 @@ class DCOREPackager:
 
     def __init__(
         self, baseURL, handle,
-        idExceptions={}, outDir=None, outFile=None):
+        verifySSL=True, idExceptions={}, outDir=None, outFile=None):
 
         self.baseURL = baseURL.rstrip('/')
         self.handle = handle.lstrip('/').rstrip('/')
 
+        # OAI identifier exceptions
         self.idExceptions = idExceptions
 
         self.oaiURL = self.baseURL+'/oai/request'
         self.headers = {'content-type': 'application/xml'}
+
+        # Verify SSL flag:
+        self.verifySSL = verifySSL
 
         self.repositoryIdentifier = self.getOAIidentifier()
         self.identifier = 'oai'+':'+self.repositoryIdentifier+':'+self.handle
@@ -60,6 +64,11 @@ class DCOREPackager:
     def getOAIidentifierException(self):
         return self.idExceptions.get(self.baseURL)
 
+    def getOAIRequest(self,options):
+        print(options)
+        return requests.get(self.oaiURL, options,
+                            headers=self.headers, verify=self.verifySSL)
+
     def getOAIidentifier(self):
 
         # Verify if there is an exception for self.baseURL
@@ -70,7 +79,7 @@ class DCOREPackager:
         options = {
             'verb': 'Identify'
         }
-        r = requests.get(self.oaiURL, options, headers=self.headers)
+        r = self.getOAIRequest(options)
         xml = ElementTree.fromstring(r.content)\
                 .find('oai:Identify', namespaces=self.NAMESPACES)\
                 .find('oai:description', namespaces=self.NAMESPACES)\
@@ -118,7 +127,7 @@ class DCOREPackager:
             'metadataPrefix': 'dim',
             'identifier': self.identifier
         }
-        r = requests.get(self.oaiURL, options, headers=self.headers)
+        r = self.getOAIRequest(options)
         xml = ElementTree.ElementTree(\
                 ElementTree.fromstring(r.content)\
                 .find('oai:GetRecord', namespaces=self.NAMESPACES)\
@@ -136,7 +145,7 @@ class DCOREPackager:
             'metadataPrefix': 'ore',
             'identifier': self.identifier
         }
-        r = requests.get(self.oaiURL, options, headers=self.headers)
+        r = self.getOAIRequest(options)
         xml = ElementTree.ElementTree(\
                 ElementTree.fromstring(r.content)\
                     .find('oai:GetRecord', namespaces=self.NAMESPACES)\
