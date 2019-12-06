@@ -28,6 +28,9 @@ class DCOREPackager:
         # OAI identifier exceptions
         self.idExceptions = idExceptions
 
+        # Verify SSL flag:
+        self.verifySSL = verifySSL
+
         self.oaiURL = self.baseURL+'/oai/request'
         self.headers = {'content-type': 'application/xml'}
 
@@ -75,11 +78,12 @@ class DCOREPackager:
     def getOAIidentifierException(self):
         return self.idExceptions.get(self.baseURL)
 
-    
-def getOAIRequest(self,options):
+
+    def getOAIRequest(self,options):
         print(options)
         return requests.get(self.oaiURL, options,
                             headers=self.headers, verify=self.verifySSL)
+
 
     def getOAIidentifier(self):
 
