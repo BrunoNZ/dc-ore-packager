@@ -1,8 +1,9 @@
 __pycache__
 __pycache__/*
-tmp/*
+tmp
 .vscode
 .vscode/*
 *.egg-info
 dist
 build
+test.py
