@@ -21,10 +21,11 @@ class DCOREPackager:
 
     def __init__(
         self, baseURL, handleList,
-        idExceptions={}, outDir=None, outFile=None):
+        verifySSL=True, idExceptions={}, outDir=None, outFile=None):
 
         self.baseURL = baseURL.rstrip('/')
 
+        # OAI identifier exceptions
         self.idExceptions = idExceptions
 
         self.oaiURL = self.baseURL+'/oai/request'
@@ -74,6 +75,11 @@ class DCOREPackager:
     def getOAIidentifierException(self):
         return self.idExceptions.get(self.baseURL)
 
+    
+def getOAIRequest(self,options):
+        print(options)
+        return requests.get(self.oaiURL, options,
+                            headers=self.headers, verify=self.verifySSL)
 
     def getOAIidentifier(self):
 
@@ -85,7 +91,7 @@ class DCOREPackager:
         options = {
             'verb': 'Identify'
         }
-        r = requests.get(self.oaiURL, options, headers=self.headers)
+        r = self.getOAIRequest(options)
         xml = ElementTree.fromstring(r.content)\
                 .find('oai:Identify', namespaces=self.NAMESPACES)\
                 .find('oai:description', namespaces=self.NAMESPACES)\
@@ -136,7 +142,7 @@ class DCOREPackager:
             'metadataPrefix': 'dim',
             'identifier': identifier
         }
-        r = requests.get(self.oaiURL, options, headers=self.headers)
+        r = self.getOAIRequest(options)
         xml = ElementTree.ElementTree(\
                 ElementTree.fromstring(r.content)\
                 .find('oai:GetRecord', namespaces=self.NAMESPACES)\
@@ -155,7 +161,7 @@ class DCOREPackager:
             'metadataPrefix': 'ore',
             'identifier': identifier
         }
-        r = requests.get(self.oaiURL, options, headers=self.headers)
+        r = self.getOAIRequest(options)
         xml = ElementTree.ElementTree(\
                 ElementTree.fromstring(r.content)\
                     .find('oai:GetRecord', namespaces=self.NAMESPACES)\
