@@ -80,7 +80,6 @@ class DCOREPackager:
 
 
     def getOAIRequest(self,options):
-        print(options)
         return requests.get(self.oaiURL, options,
                             headers=self.headers, verify=self.verifySSL)
 
