@@ -18,15 +18,18 @@ class DCOREPackager:
             'dim':'http://www.dspace.org/xmlns/dspace/dim',
             'oreatom':'http://www.openarchives.org/ore/atom/'}
 
+
     def __init__(
-        self, baseURL, handle,
+        self, baseURL, handleList,
         verifySSL=True, idExceptions={}, outDir=None, outFile=None):
 
         self.baseURL = baseURL.rstrip('/')
-        self.handle = handle.lstrip('/').rstrip('/')
 
         # OAI identifier exceptions
         self.idExceptions = idExceptions
+
+        # Verify SSL flag:
+        self.verifySSL = verifySSL
 
         self.oaiURL = self.baseURL+'/oai/request'
         self.headers = {'content-type': 'application/xml'}
@@ -35,14 +38,22 @@ class DCOREPackager:
         self.verifySSL = verifySSL
 
         self.repositoryIdentifier = self.getOAIidentifier()
-        self.identifier = 'oai'+':'+self.repositoryIdentifier+':'+self.handle
+        self.oaiIdentifierString = 'oai' + ':' + self.repositoryIdentifier + ':'
+
+        # Item Number. Used to create directories into ZipFile
+        self.nItems = len(handleList)
+
+        # List of Handles and Identifiers
+        self.handle = []
+        self.identifier = []
+        for h in handleList:
+            handle = h.lstrip('/').rstrip('/')
+            self.handle.append(handle)
+            self.identifier.append(self.oaiIdentifierString + handle)
 
         # Register Namespaces in ElementTree
         for prefix, uri in self.NAMESPACES.items():
             ElementTree.register_namespace(prefix, uri)
-
-        # Item Number. Used to create directories into ZipFile
-        self.nItem = 1
 
         # Define outDir for getTempFile method
         self.outDir = outDir
@@ -54,20 +65,27 @@ class DCOREPackager:
         if (self.outFile is None):
             self.outFile = self.getTempFile()
 
+        # Debug option: Allow not delete file at end of execution
+        self.deleteOutfile = False
+
+
     def __del__(self):
-        if os.path.exists(self.outFile):
+        if self.deleteOutfile & os.path.exists(self.outFile):
             os.remove(self.outFile)
+
 
     def getTempFile(self):
         return Path(self.outDir+'/'+str(uuid.uuid4())+'.zip')
 
+
     def getOAIidentifierException(self):
         return self.idExceptions.get(self.baseURL)
 
+
     def getOAIRequest(self,options):
-        print(options)
         return requests.get(self.oaiURL, options,
                             headers=self.headers, verify=self.verifySSL)
+
 
     def getOAIidentifier(self):
 
@@ -87,9 +105,11 @@ class DCOREPackager:
                 .find('oai_id:repositoryIdentifier', namespaces=self.NAMESPACES)
         return xml.text
 
+
     def writeContentsFile(self, outFile):
         outFile.write(b'ORE.xml\tbundle:ORE')
         pass
+
 
     def convertDimToDc(self, dim):
         dc_root = ElementTree.Element('dublin_core')
@@ -121,11 +141,12 @@ class DCOREPackager:
 
         return ElementTree.ElementTree(dc_root)
 
-    def writeDCxml(self, outFile):
+
+    def writeDCxml(self, outFile, identifier):
         options = {
             'verb': 'GetRecord',
             'metadataPrefix': 'dim',
-            'identifier': self.identifier
+            'identifier': identifier
         }
         r = self.getOAIRequest(options)
         xml = ElementTree.ElementTree(\
@@ -139,11 +160,12 @@ class DCOREPackager:
         dim_xml.write(outFile, xml_declaration=True, encoding='utf-8')
         pass
 
-    def writeORExml(self, outFile):
+
+    def writeORExml(self, outFile, identifier):
         options = {
             'verb': 'GetRecord',
             'metadataPrefix': 'ore',
-            'identifier': self.identifier
+            'identifier': identifier
         }
         r = self.getOAIRequest(options)
         xml = ElementTree.ElementTree(\
@@ -156,19 +178,20 @@ class DCOREPackager:
         xml.write(outFile, encoding='utf-8')
         pass
 
+
     def getPackage(self):
-        dID = str(self.nItem)
-        self.nItem += 1
         try:
             with ZipFile(self.outFile, 'w') as outZip:
-                with outZip.open(dID + '/dublin_core.xml', 'w') as outFile:
-                    self.writeDCxml(outFile)
+                for item in range(0,self.nItems):
+                    dID = str(item+1)
+                    with outZip.open(dID + '/dublin_core.xml', 'w') as outFile:
+                        self.writeDCxml(outFile, self.identifier[item])
 
-                with outZip.open(dID + '/ORE.xml', 'w') as outFile:
-                    self.writeORExml(outFile)
+                    with outZip.open(dID + '/ORE.xml', 'w') as outFile:
+                        self.writeORExml(outFile, self.identifier[item])
 
-                with outZip.open(dID + '/contents', 'w') as outFile:
-                    self.writeContentsFile(outFile)
+                    with outZip.open(dID + '/contents', 'w') as outFile:
+                        self.writeContentsFile(outFile)
 
         except AttributeError as e:
             return

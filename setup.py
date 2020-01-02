@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="dc-ore-packager",
-    version="0.0.2",
+    version="0.0.3",
     author="Bruno Nocera Zanette",
     author_email="brunonzanette@gmail.com",
     description="A simple DublinCore/ORE SimpleArchive Packager",

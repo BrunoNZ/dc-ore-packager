@@ -7,8 +7,10 @@ The objective is to create a clone of the given item using a link to its bitstre
 To use it:
 ```python
 from dc_ore_packager import DCOREPackager
-i = DCOREPackager('http://demo.dspace.org', '10673/7')
-pkg = i.getPackage()
+repositoryURL = 'http://demo.dspace.org'
+handleList = ['10673/3','10673/4','10673/5','10673/6','10673/7']
+i = DCOREPackager(repositoryURL, handleList, outDir='/tmp')
+print(i.getPackage())
 ```
 
 A sample WebApp that receives a URL and send a package file: [dc-ore-packager-webapp](https://github.com/BrunoNZ/dc-ore-packager-webapp)
