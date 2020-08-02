@@ -234,8 +234,7 @@ class DCOREPackager:
                         self.writeContentsFile(outFile)
 
         except AttributeError as e:
-            return
-            raise
+            raise e
 
         else:
             return self.outFile
