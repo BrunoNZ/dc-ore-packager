@@ -29,7 +29,6 @@ class DCOREPackager:
         deleteOutfile=False,
         debug=False):
 
-
         # Debug options: Allow not delete file at end of execution
         self.deleteOutfile = deleteOutfile
         self.debug = debug
@@ -146,14 +145,10 @@ class DCOREPackager:
         return handle
 
 
-    def writeContentsFile(self, outFile):
-        outFile.write(b'ORE.xml\tbundle:ORE')
-        pass
-
-
     def convertDimToDc(self, dim):
         dc_root = ElementTree.Element('dublin_core')
         dc_root.set('schema','dc')
+        dc_list = []
 
         for e in dim.iter('*'):
             dc_e = ElementTree.SubElement(dc_root,'dcvalue')
@@ -163,75 +158,89 @@ class DCOREPackager:
             e_qualifier = e.get('qualifier')
             e_lang = e.get('lang')
 
+            md = "dc"
+
             if (e_mdschema != 'dc'):
                 continue
 
             if (e_element is not None):
                 dc_e.set('element', e_element)
+                md += "." + e_element
             else:
                 raise Exception('e_element is none')
 
             if (e_qualifier is not None):
                 dc_e.set('qualifier', e_qualifier)
+                md += "." + e_qualifier
 
             if (e_lang is not None):
                 dc_e.set('language', e_lang)
 
             dc_e.text = e.text
 
-        return ElementTree.ElementTree(dc_root)
+            dc_list.append(md)
+
+        return ElementTree.ElementTree(dc_root), dc_list
 
 
-    def writeDCxml(self, outFile, identifier):
+    def getDIMxml(self, identifier):
         options = {
             'verb': 'GetRecord',
             'metadataPrefix': 'dim',
             'identifier': identifier
         }
         r = self.getOAIRequest(options)
-        xml = ElementTree.ElementTree(\
+        return ElementTree.ElementTree(\
                 ElementTree.fromstring(r.content)\
-                .find('oai:GetRecord', namespaces=self.NAMESPACES)\
-                .find('oai:record', namespaces=self.NAMESPACES)\
-                .find('oai:metadata', namespaces=self.NAMESPACES)
-                .find('dim:dim', namespaces=self.NAMESPACES)
-            )
-        dim_xml = self.convertDimToDc(xml)
-        dim_xml.write(outFile, xml_declaration=True, encoding='utf-8')
-        pass
+                    .find('oai:GetRecord', namespaces=self.NAMESPACES)\
+                    .find('oai:record', namespaces=self.NAMESPACES)\
+                    .find('oai:metadata', namespaces=self.NAMESPACES)
+                    .find('dim:dim', namespaces=self.NAMESPACES)
+                )
 
 
-    def writeORExml(self, outFile, identifier):
+    def getORExml(self, identifier):
         options = {
             'verb': 'GetRecord',
             'metadataPrefix': 'ore',
             'identifier': identifier
         }
         r = self.getOAIRequest(options)
-        xml = ElementTree.ElementTree(\
+        return ElementTree.ElementTree(\
                 ElementTree.fromstring(r.content)\
                     .find('oai:GetRecord', namespaces=self.NAMESPACES)\
                     .find('oai:record', namespaces=self.NAMESPACES)\
                     .find('oai:metadata', namespaces=self.NAMESPACES)\
                     .find('atom:entry', namespaces=self.NAMESPACES)
                 )
-        xml.write(outFile, encoding='utf-8')
+        
+        
+    def writeContentsFile(self, outFile):
+        outFile.write(b'ORE.xml\tbundle:ORE')
         pass
 
 
     def getPackage(self):
+        dc_set = set()
         try:
             with ZipFile(self.outFile, 'w') as outZip:
                 for item in range(0,self.nItems):
+                    dc_xml, dc_list = self.convertDimToDc(self.getDIMxml(self.identifier[item]))
+                    ore_xml = self.getORExml(self.identifier[item])
                     dID = str(item+1)
                     with outZip.open(dID + '/dublin_core.xml', 'w') as outFile:
-                        self.writeDCxml(outFile, self.identifier[item])
+                        dc_xml.write(outFile, xml_declaration=True, encoding='utf-8')
 
                     with outZip.open(dID + '/ORE.xml', 'w') as outFile:
-                        self.writeORExml(outFile, self.identifier[item])
+                        ore_xml.write(outFile, encoding='utf-8')
 
                     with outZip.open(dID + '/contents', 'w') as outFile:
                         self.writeContentsFile(outFile)
+
+                    dc_set.update(dc_list)
+            
+                with outZip.open('dc_set.txt', 'w') as outFile:
+                    print(dc_set, file=outFile)
 
         except AttributeError as e:
             raise e
