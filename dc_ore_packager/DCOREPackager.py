@@ -79,6 +79,8 @@ class DCOREPackager:
         if (self.outFile is None):
             self.outFile = self.getTempFile()
 
+        self.dcSet = set()
+
         if (self.debug):
             self.printDebug()
 
@@ -139,7 +141,7 @@ class DCOREPackager:
 
     def prepareHandle(self, handle):
         handle = handle.lstrip('/').rstrip('/')
-        useIdPrefix = self.useIdPrefix or self.getIdentifierException("useIdPrefix")
+        useIdPrefix = self.useIdPrefix or (self.getIdentifierException("useIdPrefix") is not None)
         if useIdPrefix & (self.repositoryIdentifier['handlePrefix'] is not None):
             handle = self.repositoryIdentifier['handlePrefix'] + '/' + handle.split('/')[-1]
         return handle
@@ -221,7 +223,6 @@ class DCOREPackager:
 
 
     def getPackage(self):
-        dc_set = set()
         try:
             with ZipFile(self.outFile, 'w') as outZip:
                 for item in range(0,self.nItems):
@@ -237,16 +238,17 @@ class DCOREPackager:
                     with outZip.open(dID + '/contents', 'w') as outFile:
                         self.writeContentsFile(outFile)
 
-                    dc_set.update(dc_list)
-            
-                with outZip.open('dc_set.txt', 'w') as outFile:
-                    print(dc_set, file=outFile)
+                    self.dcSet.update(dc_list)
 
         except AttributeError as e:
             raise e
 
         else:
             return self.outFile
+
+    
+    def getDCElements(self):
+        return self.dcSet
 
 
     def printDebug(self):
